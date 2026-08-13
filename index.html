@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>骰骰子遊戲</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", "Noto Sans TC", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0d0e10, #21395f);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: start;
+      padding: 40px 20px;
+
+      /* background-image: url(./back.png); */
+    }
+
+    .container {
+      width: min(700px, 100%);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(10px);
+      /* 背景模糊 */
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 2rem;
+      letter-spacing: 2px;
+    }
+
+    .btn-area {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    #btn {
+      background: linear-gradient(45deg, #f59e0b, #f97316);
+      border: none;
+      color: white;
+      padding: 12px 28px;
+      border-radius: 999px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform .15s ease, box-shadow .15s ease;
+      box-shadow: 0 8px 20px rgba(249, 115, 22, .35);
+    }
+
+    #btn:hover {
+      scale: 1.05;
+      box-shadow: 0 12px 24px rgba(249, 115, 22, .45);
+    }
+
+    #btn:active {
+      transform: scale(.88);
+    }
+
+    #boxlist {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .box {
+      display: grid;
+      grid-template-columns: 120px 120px 1fr;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: transform .15s ease;
+    }
+
+    .box:hover {
+      transform: translateX(5px) translateY(-5px);
+      scale: 1.03;
+    }
+
+    .title {
+      background: rgba(255, 255, 255, 0.12);
+      font-weight: bold;
+      color: #f8fafc;
+      position: sticky;
+      top: 0;
+    }
+
+    .green {
+      background: linear-gradient(90deg, #2bd395, #048d5f);
+      color: #052e16;
+      font-weight: bold;
+      border: none;
+      animation: glow 0.8s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from {
+        box-shadow: 0 0 10px rgba(169, 246, 2, 0.932);
+      }
+
+      to {
+        box-shadow: 0 0 10px rgba(14, 111, 54, 0.956);
+      }
+    }
+
+    .dice {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .die {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: white;
+      color: #111827;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.1rem;
+      font-weight: bold;
+      box-shadow: inset 0 -2px -2px rgba(0, 0, 0, .15);
+      animation: turn 0.5s ease-in-out alternate;
+    }
+
+    @keyframes turn {
+      from {
+        transform: rotateY(180deg) rotateX(0deg);
+        box-shadow: #f8911b;
+      }
+
+      to {
+        transform: rotateY(0deg) rotateX(360deg);
+        box-shadow: #052e16;
+      }
+    }
+
+    .result-win {
+      color: #052e16;
+    }
+
+    .result-lose {
+      color: #cbd5e1;
+    }
+
+    .summary {
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.08);
+      text-align: center;
+      font-size: 1.05rem;
+    }
+
+    .summary strong {
+      color: #fbbf24;
+      font-size: 1.2rem;
+    }
+
+    @media (max-width: 560px) {
+      .box {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .title {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🎲 骰骰子遊戲 🎲</h1>
+
+    <div class="btn-area">
+      <button id="btn" type="button">開始擲骰子</button>
+    </div>
+
+    <div id="boxlist"></div>
+  </div>
+
+  <script>
+    const btn = document.querySelector('#btn');
+    const boxlist = document.querySelector('#boxlist');
+
+    btn.addEventListener('click', function () {
+
+      // 顯示box列
+      boxlist.innerHTML = `
+        <div class="box title">
+          <div>次數</div>
+          <div>結果</div>
+          <div>骰子點數</div>
+        </div>
+      `;
+
+      const maxTimes = 20;
+      let sameCount = 0;
+
+      for (let i = 0; i < maxTimes; i++) {
+
+        const diceA = dice();
+        const diceB = dice();
+        const diceC = dice();
+
+        const isSame = (diceA === diceB) && (diceA === diceC);
+
+        if (isSame) {
+          sameCount++;
+        }
+
+        const className = isSame ? 'box green' : 'box';
+
+        boxlist.innerHTML += `
+          <div class="${className}">
+            <div>第 ${i + 1} 次</div>
+            
+            <div class="${isSame ? 'result-win' : 'result-lose'}">
+              ${isSame ? '🎉 中獎了' : '😢 未中獎'}
+            </div>
+
+            <div class="dice">
+              <div class="die">${diceA}</div>
+              <div class="die">${diceB}</div>
+              <div class="die">${diceC}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      // 累計擲20次的中獎次數
+      boxlist.innerHTML += `
+        <div class="summary">
+          本次共中獎 <strong>${sameCount}</strong> 次
+        </div>
+      `;
+    });
+
+    function dice() {
+      return Math.floor(Math.random() * 6) + 1;
+    }
+  </script>
+</body>
+
+</html>
